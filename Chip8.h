@@ -55,13 +55,20 @@ private:
     std::default_random_engine e1;
     std::uniform_int_distribution< std::uint8_t  > uniform_dist;
 
+    bool extendedMode = false;
+
     QTimer mChip8Timer;
 
     void emulate();
 
     // Instructions //
+    void Inst_00CK();
     void Inst_00E0();
     void Inst_00EE();
+    void Inst_00FB();
+    void Inst_00FC();
+    void Inst_00FE();
+    void Inst_00FF();
     void Inst_1NNN();
     void Inst_2NNN();
     void Inst_3XKK();

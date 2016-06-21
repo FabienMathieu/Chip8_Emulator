@@ -2,12 +2,17 @@
 
 Chip8Screen::Chip8Screen(QObject *parent) : QObject(parent)
 {
-    clear();
+    resize(8192);
+}
+
+void Chip8Screen::resize(uint32_t size)
+{
+    mScreen.resize(size, 0);
 }
 
 void Chip8Screen::clear()
 {
-    mScreen.fill(0);
+    mScreen.insert(mScreen.end(), 0);
 }
 
 void Chip8Screen::setPixel(unsigned int pixel, uint8_t color)
@@ -17,7 +22,7 @@ void Chip8Screen::setPixel(unsigned int pixel, uint8_t color)
 
 std::uint8_t Chip8Screen::getPixel(unsigned int pixel)
 {
-    return mScreen.at(pixel); // PROBLEME ICI
+    return mScreen.at(pixel);
 }
 
 std::uint8_t* Chip8Screen::getData()

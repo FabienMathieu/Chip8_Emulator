@@ -10,6 +10,7 @@ class Chip8Screen : public QObject
 public:
     explicit Chip8Screen(QObject *parent = 0);
 
+    void resize(std::uint32_t size);
     void clear();
 
     void setPixel(unsigned int pixel, std::uint8_t color);
@@ -24,7 +25,7 @@ public slots:
 
 
 private:
-    std::array< std::uint8_t, 8192 > mScreen; // Ecran du chip 8 (64 * 32 * 4)
+    std::vector< std::uint8_t > mScreen;
 
 };
 

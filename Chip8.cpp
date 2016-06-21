@@ -28,6 +28,29 @@ Chip8::Chip8()
     memory[65] = 224; memory[66] = 144; memory[67] = 144; memory[68] = 144; memory[69] = 224;
     memory[70] = 240; memory[71] = 128; memory[72] = 240; memory[73] = 128; memory[74] = 240;
     memory[75] = 240; memory[76] = 128; memory[77] = 240; memory[78] = 128; memory[79] = 128;
+    // Super Chip8
+    // Table de caractères 10bit
+    memory[60] = 0x3C; memory[61] = 0x7E; memory[62] = 0xC3; memory[63] = 0xC3; memory[64] = 0xC3;
+    memory[65] = 0xC3; memory[66] = 0xC3; memory[67] = 0xC3; memory[68] = 0x7E; memory[69] = 0x3C;
+    memory[70] = 0x18; memory[71] = 0x38; memory[72] = 0x58; memory[73] = 0x18; memory[74] = 0x18;
+    memory[75] = 0x18; memory[76] = 0x18; memory[77] = 0x18; memory[78] = 0x18; memory[79] = 0x3C;
+    memory[80] = 0x3E; memory[81] = 0x7F; memory[82] = 0xC3; memory[83] = 0x06; memory[84] = 0x0C;
+    memory[85] = 0x18; memory[86] = 0x30; memory[87] = 0x60; memory[88] = 0xFF; memory[89] = 0xFF;
+    memory[90] = 0x3C; memory[91] = 0x7E; memory[92] = 0xC3; memory[93] = 0x03; memory[94] = 0x0E;
+    memory[95] = 0x0E; memory[96] = 0x03; memory[97] = 0xC3; memory[98] = 0x7E; memory[99] = 0x3C;
+    memory[100] = 0x06; memory[101] = 0x0E; memory[102] = 0x1E; memory[103] = 0x36; memory[104] = 0x66;
+    memory[105] = 0xC6; memory[106] = 0xFF; memory[107] = 0xFF; memory[108] = 0x06; memory[109] = 0x06;
+    memory[110] = 0xFF; memory[111] = 0xFF; memory[112] = 0xC0; memory[113] = 0xC0; memory[114] = 0xFC;
+    memory[115] = 0xFE; memory[116] = 0x03; memory[117] = 0xC3; memory[118] = 0x7E; memory[119] = 0x3C;
+    memory[120] = 0x3E; memory[121] = 0x7C; memory[122] = 0xC0; memory[123] = 0xC0; memory[124] = 0xFC;
+    memory[125] = 0xFE; memory[126] = 0xC3; memory[127] = 0xC3; memory[128] = 0x7E; memory[129] = 0x3C;
+    memory[130] = 0xFF; memory[131] = 0xFF; memory[132] = 0x03; memory[133] = 0x06; memory[134] = 0x0C;
+    memory[135] = 0x18; memory[136] = 0x30; memory[137] = 0x60; memory[138] = 0x60; memory[139] = 0x60;
+    memory[140] = 0x3C; memory[141] = 0x7E; memory[142] = 0xC3; memory[143] = 0xC3; memory[144] = 0x7E;
+    memory[145] = 0x7E; memory[146] = 0xC3; memory[147] = 0xC3; memory[148] = 0x7E; memory[149] = 0x3C;
+    memory[150] = 0x3C; memory[151] = 0x7E; memory[152] = 0xC3; memory[153] = 0xC3; memory[154] = 0x7F;
+    memory[155] = 0x3F; memory[156] = 0x03; memory[157] = 0x03; memory[158] = 0x3E; memory[159] = 0x7C;
+
 
     std::random_device r;
 
@@ -99,6 +122,8 @@ void Chip8::emulate()
         {
         case 0xE0: Inst_00E0(); break;
         case 0xEE: Inst_00EE(); break;
+        case 0xFE: Inst_00FE(); break;
+        case 0xFF: Inst_00FF(); break;
         }
         break;
 
@@ -170,6 +195,29 @@ void Chip8::emulate()
     DT = DT > 0 ? DT-- : 0;*/
 }
 
+void Chip8::Inst_00CK()
+{
+    int pixelToMove = 0; // Nombre de pixel à déplacer
+    // On divise par 2 si le mode étendu est désactivé
+    if (extendedMode)
+        pixelToMove = K * 512; // 512 bytes par lignes
+    else
+        pixelToMove = static_cast< int >(std::ceil(K / 2.0f) * 256);
+
+    // Position des pixels à déplacer
+    int startPos = mScreenBuffer.length() - pixelToMove - 1;
+
+    for (int i = mScreenBuffer.length() - 1; i >= 0; i--)
+    {
+        // Si on dépasse, on efface
+        if (startPos >= 0)
+            mScreenBuffer.setPixel(i, mScreenBuffer.getPixel(startPos));
+        else
+            mScreenBuffer.setPixel(i, 0);
+        startPos--;
+    }
+}
+
 void Chip8::Inst_00E0()
 {
     mScreenBuffer.clear();
@@ -179,6 +227,56 @@ void Chip8::Inst_00EE()
 {
     PC = adressStack.top();
     adressStack.pop();
+}
+
+void Chip8::Inst_00FB()
+{
+    // Nombre de byte à décaler à droite
+    int offset = (extendedMode ? 16 : 8);
+
+    for (int y = 0; y < (extendedMode ? 64 : 32); y++)
+    {
+        for (int x = (extendedMode ? 495 : 247); x >= 0; x--)
+        {
+            // On décale à droite
+            int current = y * (extendedMode ? 512 : 256) + x;
+            mScreenBuffer.setPixel(current + offset, mScreenBuffer.getPixel(current));
+            // On efface les 4 pixels à gauche
+            if (x < offset)
+                mScreenBuffer.setPixel(current, 0);
+        }
+    }
+}
+
+void Chip8::Inst_00FC()
+{
+    // Nombre de byte à décaler à droite
+    int offset = (extendedMode ? 16 : 8);
+
+    for (int y = 0; y < (extendedMode ? 64 : 32); y++)
+    {
+        for (int x = (extendedMode ? 495 : 247); x >= 0; x--)
+        {
+            // On décale à droite
+            int current = y * (extendedMode ? 512 : 256) + x;
+            mScreenBuffer.setPixel(current + offset, mScreenBuffer.getPixel(current));
+            // On efface les 4 pixels à gauche
+            if (x < offset)
+                mScreenBuffer.setPixel(current, 0);
+        }
+    }
+}
+
+void Chip8::Inst_00FE()
+{
+    extendedMode = false;
+    mScreenBuffer.resize(8192);
+}
+
+void Chip8::Inst_00FF()
+{
+    extendedMode = true;
+    mScreenBuffer.resize(32768);
 }
 
 void Chip8::Inst_1NNN()
@@ -383,7 +481,7 @@ void Chip8::Inst_FX29()
 
 void Chip8::Inst_FX30()
 {
-    I = V[X] * 5;
+    I = V[X] * 10 + 60;
 }
 
 void Chip8::Inst_FX33()

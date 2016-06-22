@@ -118,12 +118,19 @@ void Chip8::emulate()
     switch(code)
     {
     case 0x0000:
-        switch(KK)
+        if(Y == 0xC)
+            Inst_00CK();
+        else
         {
-        case 0xE0: Inst_00E0(); break;
-        case 0xEE: Inst_00EE(); break;
-        case 0xFE: Inst_00FE(); break;
-        case 0xFF: Inst_00FF(); break;
+            switch(KK)
+            {
+            case 0xE0: Inst_00E0(); break;
+            case 0xEE: Inst_00EE(); break;
+            case 0xFB: Inst_00FB(); break;
+            case 0xFC: Inst_00FC(); break;
+            case 0xFE: Inst_00FE(); break;
+            case 0xFF: Inst_00FF(); break;
+            }
         }
         break;
 
@@ -255,13 +262,13 @@ void Chip8::Inst_00FC()
 
     for (int y = 0; y < (extendedMode ? 64 : 32); y++)
     {
-        for (int x = (extendedMode ? 495 : 247); x >= 0; x--)
+        for (int x = offset; x < (extendedMode ? 512 : 256); x++)
         {
-            // On décale à droite
+            // On décale à gauche
             int current = y * (extendedMode ? 512 : 256) + x;
-            mScreenBuffer.setPixel(current + offset, mScreenBuffer.getPixel(current));
-            // On efface les 4 pixels à gauche
-            if (x < offset)
+            mScreenBuffer.setPixel(current - offset, mScreenBuffer.getPixel(current));
+            // On efface à droite
+            if (x > (extendedMode ? 495 : 247))
                 mScreenBuffer.setPixel(current, 0);
         }
     }
@@ -395,13 +402,35 @@ void Chip8::Inst_CXKK()
 void Chip8::Inst_DXYK()
 {
     V[15] = 0;
+
+    // Gestion du Super Chip 8
+    if(K == 0)
+        K = 16;
+
     for(std::uint8_t i = 0; i < K; ++i)
     {
         std::uint8_t ligne = memory[I + i];
-        for(std::uint8_t n = 0; n < 8; ++n)
+        // Gestion du Super Chip 8
+        std::uint8_t ligne2 = 0;
+        int pixelsInLine = 8;
+        // Cas particulier 16x16
+        if(K == 16 && extendedMode)
+        {
+            ligne = memory[I + i *2];
+            ligne2 = memory[I + i * 2 + 1];
+            pixelsInLine = 16;
+        }
+        for(std::uint8_t n = 0; n < pixelsInLine; ++n)
         {
             std::uint8_t pixel = static_cast< std::uint8_t >(static_cast< std::uint8_t >(ligne << n) >> 7);
-            int pixelAdress = V[X] + n + (V[Y] + i) * 64;
+
+            if(n >= 8)
+            {
+                int n2 = n - 8;
+                pixel = static_cast< std::uint8_t >(static_cast< std::uint8_t >(ligne2 << n2) >> 7);
+            }
+
+            int pixelAdress = V[X] + n + (V[Y] + i) * (extendedMode ? 128 : 64);
             pixelAdress *= 4;
             pixelAdress %= mScreenBuffer.length();
 

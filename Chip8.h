@@ -18,6 +18,8 @@ public:
 
     Chip8Screen* getChip8Screen() { return &mScreenBuffer; }
 
+    bool isExtendedMode() const { return extendedMode; }
+
 public slots:
     void loadRom(const QString& urlAsString);
     void startEmulation();

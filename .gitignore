@@ -1,0 +1,8 @@
+#ignore Qt generated files
+*.pro.user
+*.qmake.stash
+Makefile.*
+Makefile
+
+#ignore rom folder
+roms

@@ -6,3 +6,8 @@ Makefile
 
 #ignore rom folder
 roms
+
+#ignore bin folder
+bin
+debug
+release
